@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { csv } from 'csvtojson';
 import { json2csv } from 'json-2-csv';
 import * as XLSX from 'xlsx'
+import { getDef } from 'word-definition';
 
 
 const Flashcards = () => {
@@ -11,7 +12,7 @@ const Flashcards = () => {
 
   useEffect(() => {
     const fetchCards = async () => {
-      const response = await fetch('http://10.0.0.6:3001/redfix.xlsx');
+      const response = await fetch('http://localhost:3001/redfix.xlsx');
       const arrayBuffer = await response.arrayBuffer();
       const data = new Uint8Array(arrayBuffer);
       const workbook = XLSX.read(data, { type: 'array' });
@@ -32,6 +33,7 @@ const Flashcards = () => {
     updatedCards[index].backgroundColor = updatedCards[index].backgroundColor === 'green' ? 'white' : 'green';
     setCards(updatedCards);
   };
+
   const handleRedButtonClick = (index) => {
     // Change the background color of the clicked card to red
     const updatedCards = [...cards];
@@ -52,7 +54,7 @@ const Flashcards = () => {
     const blob = new Blob([s2ab(excelData)], { type: 'application/octet-stream' });
     const formData = new FormData();
     formData.append('file', blob, 'redfix.xlsx');
-    await fetch('http://10.0.0.6:3001/upload', { method: 'POST', body: formData });  };
+    await fetch('http://localhost:3001/upload', { method: 'POST', body: formData });  };
 
 
   function s2ab(s) {
@@ -114,13 +116,34 @@ const Flashcards = () => {
   const handleNewWordChange = (event) => {
     setNewWord(event.target.value);
   };
+  const [word, setWord] = useState('');
+  const [examples, setExamples] = useState([]);
 
+  const handleLookup = (index) => {
+    setWord(cards[index]['מילים']);
+  };
+  useEffect(() => {
+    if (word) {
+      fetch(`http://localhost:3001/word?word=${word}`)
+        .then(response => response.json())
+        .then(data => {
+          setExamples(data.examples);
+        })
+        .catch(error => {
+          console.error(error);
+          setExamples([]);
+        });
+    } else {
+      setExamples([]);
+    }
+  }, [word]);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', direction: 'rtl' }}>
       <button style={{ fontSize: '24px', padding: '10px' }} onClick={() => handlesave()}> save the red</button>
       <button style={{ fontSize: '24px', padding: '10px' }} onClick={() => savechanges()}> save changes</button>
       <button style={{ fontSize: '24px', padding: '10px' }} onClick={() => mixcards()}> mix</button>
       <button style={{ fontSize: '24px', padding: '10px' }} onClick={() => countredcards()}> by conut</button>
+      <button style={{ fontSize: '24px', padding: '10px' }} onClick={handleLookup}> for test</button>
       <form onSubmit={handleSubmit} >
       <label style={{ fontSize: '24px', padding: '10px', display: 'block' }}>
     
@@ -162,9 +185,18 @@ const Flashcards = () => {
             <button style={{ fontSize: '24px', padding: '10px' }} onClick={() => handledel(index)}>
               Delete
             </button>
+            <button style={{ fontSize: '24px', padding: '10px' }} onClick={() => handleLookup(index)}>
+              get examples
+            </button>
           </div>
         ))}
         <button onClick={() => handlesave()} style={{ position: 'fixed', bottom: '20px', right: '20px', fontSize: '24px', padding: '10px' }}>Saved Button</button>
+   <div style={{ position: 'fixed', bottom: '150px', right: '20px', fontSize: '24px', padding: '10px', backgroundColor: '#333', color: '#fff', maxHeight: '200px', maxWidth:'500px', overflowY: 'auto' }}>       <ul>
+          {examples.map(example => (
+            <li key={example}>{example}</li>
+          ))}
+        </ul>
+        </div>
       </div>
      
     </div>

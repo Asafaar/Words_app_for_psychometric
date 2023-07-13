@@ -5,6 +5,7 @@ const fs = require('fs');
 const cors = require('cors');
 const path = require('path'); // Add this line
 
+
 const app = express();
 const upload = multer({ dest: 'uploads/' });
 app.use(cors()); // enable CORS for all routes
@@ -44,8 +45,41 @@ app.post('/upload', upload.single('file'), (req, res) => {
     res.status(400).send('Invalid file type');
   }
 });
+const WordNet = require("node-wordnet")
+const wordnet = new WordNet("./node_modules/wordnet-db/dict")
 
 
+ app.get('/word', (req, res)  =>{
+  console.log(req.query.word)
+  const word= req.query.word;
+  const examplesWithWord = [];
+   wordnet.lookup(word, function(err, results) {
+    if (err) {
+      console.error(err);
+      return;
+    }
+    console.log(results)
+   
+  
+    results.forEach(function(result) {
+      result.exp.forEach(function(example) {
+        // console.log(example)
+        if (example.includes(word)) {
+          console.log(example)
+          examplesWithWord.push(example);
+          console.log(examplesWithWord)
+        }
+      });
+  
+      // console.log(JSON.stringify(result, null, 2))
+    })
+    res.send({ examples: examplesWithWord });
+
+  })
+  // console.log(examplesWithWord)
+  // res.send({ examples: examplesWithWord });
+
+});
 // app.post('/redfix', upload.single('file'), (req, res) => {
 //   const file = req.file;
 //   if (!file) {

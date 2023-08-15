@@ -80,6 +80,41 @@ const wordnet = new WordNet("./node_modules/wordnet-db/dict")
   // res.send({ examples: examplesWithWord });
 
 });
+
+app.post('/uploadtxt', upload.single('file'), (req, res) => {
+  const file = req.file;
+  const extname = path.extname(file.originalname);
+  if (extname === '.txt') {
+    const oldPath = `uploads/count${extname}`;
+    const newPath = path.join(path.dirname(oldPath), path.basename(oldPath, path.extname(oldPath)) + extname);
+
+    fs.unlink(oldPath, (err) => {
+      if (err && err.code !== 'ENOENT') {
+        console.error(err);
+        res.status(500).send('Error deleting file');
+      } else {
+        fs.rename(file.path, newPath, (err) => {
+          if (err) {
+            console.error(err);
+            res.status(500).send('Error saving file');
+          } else {
+            console.log('File uploaded successfully');
+            res.send('File uploaded successfully');
+          }
+        });
+      }
+    });
+  } else {
+    console.log('Invalid file type');
+    res.status(400).send('Invalid file type');
+  }
+});
+app.get('/gettxt', (req, res) => {
+  const filePath = `${__dirname}/uploads/count.txt`;
+  
+    res.sendFile(filePath);
+  
+  });
 // app.post('/redfix', upload.single('file'), (req, res) => {
 //   const file = req.file;
 //   if (!file) {
